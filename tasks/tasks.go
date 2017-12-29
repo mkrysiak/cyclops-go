@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cyclops-go/models"
+	"github.com/mkrysiak/cyclops-go/models"
 	log "github.com/sirupsen/logrus"
 )
 

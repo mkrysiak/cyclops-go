@@ -1,8 +1,8 @@
 package models
 
 import (
-	"github.com/cyclops-go/conf"
 	"github.com/go-redis/redis"
+	"github.com/mkrysiak/cyclops-go/conf"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -9,9 +9,9 @@ import (
 	"github.com/alicebob/miniredis"
 	"github.com/jmoiron/sqlx"
 
-	"github.com/cyclops-go/conf"
-	"github.com/cyclops-go/models"
 	"github.com/gavv/httpexpect"
+	"github.com/mkrysiak/cyclops-go/conf"
+	"github.com/mkrysiak/cyclops-go/models"
 )
 
 func TestAPI(t *testing.T) {

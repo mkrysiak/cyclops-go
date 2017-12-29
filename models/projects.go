@@ -3,10 +3,10 @@ package models
 import (
 	"sync"
 
-	"github.com/cyclops-go/conf"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/mkrysiak/cyclops-go/conf"
 	log "github.com/sirupsen/logrus"
 )
 

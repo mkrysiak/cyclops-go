@@ -6,10 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cyclops-go/api"
-	"github.com/cyclops-go/conf"
-	"github.com/cyclops-go/models"
-	"github.com/cyclops-go/tasks"
+	"github.com/mkrysiak/cyclops-go/api"
+	"github.com/mkrysiak/cyclops-go/conf"
+	"github.com/mkrysiak/cyclops-go/models"
+	"github.com/mkrysiak/cyclops-go/tasks"
 	log "github.com/sirupsen/logrus"
 )
 

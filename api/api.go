@@ -10,11 +10,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cyclops-go/conf"
-	"github.com/cyclops-go/hash"
+	"github.com/mkrysiak/cyclops-go/conf"
+	"github.com/mkrysiak/cyclops-go/hash"
 
-	"github.com/cyclops-go/models"
 	"github.com/golang/gddo/httputil/header"
+	"github.com/mkrysiak/cyclops-go/models"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
