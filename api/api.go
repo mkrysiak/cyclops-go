@@ -42,11 +42,12 @@ func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.
 	r := mux.NewRouter()
 	r.HandleFunc("/api/{projectId:[0-9]+}/store/", api.apiHandler).Methods("POST")
 	r.HandleFunc("/healthcheck", api.healthcheckHandler).Methods("GET")
-	//TODO: Restrict access to /stats.  It should not be public.
+	//TODO: Restrict access to /stats.  Ideally, it should not be public.
 	r.HandleFunc("/stats", api.statsHandler).Methods("GET")
 
 	// Middleware
 	n := negroni.New()
+	n.Use(negroni.HandlerFunc(api.OptionsHandler))
 	n.Use(negroni.HandlerFunc(api.LoggingMiddleware))
 	n.UseHandler(r)
 
@@ -91,14 +92,11 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 	cacheKey.WriteString(exceptionHash)
 	log.Debugf("Cache Key: %s", cacheKey.String())
 
-	//TODO: Make URL configurable
 	var originUrl bytes.Buffer
-	originUrl.WriteString("http://localhost:2222")
+	originUrl.WriteString(a.cfg.SentryURL)
 	originUrl.WriteString(r.RequestURI)
 	log.Debugf("Origin URL: %s", originUrl.String())
 
-	// TODO: It's bad practice to return headers that can identify the product that's in use if
-	// this proxy is externally exposed.
 	count := a.validateCache(cacheKey.String())
 	if count > a.cfg.MaxCacheUses {
 		w.Header().Set("X-CYCLOPS-CACHE-COUNT", strconv.FormatInt(count, 10))

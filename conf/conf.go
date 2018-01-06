@@ -16,6 +16,8 @@ type Config struct {
 	SentryURL          string `required:"true" env:"SENTRY_URL"`
 	MaxCacheUses       int64  `default:"10" env:"MAX_CACHE_USES"`
 	UrlCacheExpiration int    `default:"60" env:"URL_CACHE_EXPIRATION"`
+	CorsOriginSuffix   string `env:"CORS_ORIGIN_SUFFIX"`
+	CorsExternalDNS    string `env:"CORS_EXTERNAL_DNS"`
 }
 
 //TODO: Input validation
@@ -41,5 +43,4 @@ func (c *Config) GetDatabaseSchemeAndUrl() (string, string) {
 		return "", ""
 	}
 	return u.Scheme, c.DatabaseURL
-
 }
