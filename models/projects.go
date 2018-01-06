@@ -55,16 +55,14 @@ func (p *SentryProjects) UpdateProjects() {
 	err := p.Db.Select(&projects, "SELECT project_id, public_key, secret_key FROM sentry_projectkey")
 	if err != nil {
 		log.Error(err)
-	} else {
-		//TODO: Handle deletion of projects once moved to a pg listener
-		for _, v := range projects {
-			if _, ok := projectsById.LoadOrStore(v.ProjectId, v); !ok {
-				log.WithFields(log.Fields{"ProjectId": v.ProjectId}).Info("Loaded new project: ")
-			}
-
+		return
+	}
+	//TODO: Handle deletion of projects once moved to a pg listener
+	for _, v := range projects {
+		if _, ok := projectsById.LoadOrStore(v.ProjectId, v); !ok {
+			log.WithFields(log.Fields{"ProjectId": v.ProjectId}).Info("Loaded new project: ")
 		}
 	}
-
 }
 
 func (p *SentryProjects) Shutdown() {

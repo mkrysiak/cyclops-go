@@ -36,6 +36,9 @@ func NewRedisByAddr(add string) *Redis {
 }
 
 func (r *Redis) Shutdown() {
-	log.Info("Closing Redis Connection")
-	r.Client.Close()
+	err := r.Client.Close()
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info("Closed Redis Connection")
 }

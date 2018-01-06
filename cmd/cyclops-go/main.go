@@ -38,13 +38,14 @@ func main() {
 	requestStorage := models.NewRequestStorage(redis.Client)
 	sentryProjects := models.NewSentryProjects(cfg.GetDatabaseSchemeAndUrl())
 
-	tasks.StartBackgroundTaskRunners(sentryProjects, requestStorage)
+	tasks := tasks.StartBackgroundTaskRunners(sentryProjects, requestStorage)
 
 	// Exit cleanly
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigs
+		tasks.Shutdown()
 		sentryProjects.Shutdown()
 		redis.Shutdown()
 		os.Exit(0)

@@ -10,8 +10,10 @@ import (
 )
 
 type Tasks struct {
-	requestStorage *models.RequestStorage
-	sentryProjects *models.SentryProjects
+	requestStorage             *models.RequestStorage
+	sentryProjects             *models.SentryProjects
+	projectsUpdaterTicker      *time.Ticker
+	sendRequestsToSentryTicker *time.Ticker
 }
 
 func StartBackgroundTaskRunners(sentryProjects *models.SentryProjects, requestStorage *models.RequestStorage) *Tasks {
@@ -19,12 +21,12 @@ func StartBackgroundTaskRunners(sentryProjects *models.SentryProjects, requestSt
 		requestStorage: requestStorage,
 		sentryProjects: sentryProjects,
 	}
-	tasks.startSendRequestsToSentryTask()
-	tasks.startSentryProjectsUpdaterTask()
+	tasks.projectsUpdaterTicker = tasks.startSendRequestsToSentryTask()
+	tasks.sendRequestsToSentryTicker = tasks.startSentryProjectsUpdaterTask()
 	return tasks
 }
 
-func (t *Tasks) startSendRequestsToSentryTask() {
+func (t *Tasks) startSendRequestsToSentryTask() *time.Ticker {
 	ticker := time.NewTicker(20 * time.Millisecond)
 	go func() {
 		for {
@@ -34,10 +36,11 @@ func (t *Tasks) startSendRequestsToSentryTask() {
 			}
 		}
 	}()
+	return ticker
 }
 
 //TODO: Should use a pg listener rather than polling
-func (t *Tasks) startSentryProjectsUpdaterTask() {
+func (t *Tasks) startSentryProjectsUpdaterTask() *time.Ticker {
 	t.sentryProjects.UpdateProjects()
 	ticker := time.NewTicker(10 * time.Second)
 	go func() {
@@ -48,6 +51,7 @@ func (t *Tasks) startSentryProjectsUpdaterTask() {
 			}
 		}
 	}()
+	return ticker
 }
 
 func (t *Tasks) dequeueRequestAndSend() {
@@ -79,6 +83,12 @@ func (t *Tasks) dequeueRequestAndSend() {
 	}
 
 	handleResponse(resp)
+}
+
+func (t *Tasks) Shutdown() {
+	log.Info("Shutting down background tasks")
+	t.projectsUpdaterTicker.Stop()
+	t.sendRequestsToSentryTicker.Stop()
 }
 
 //TODO: Handle back-offs when Sentry is overloaded by honoring Sentry's
