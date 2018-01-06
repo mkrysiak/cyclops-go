@@ -84,7 +84,7 @@ func (t *Tasks) dequeueRequestAndSend() {
 //TODO: Handle back-offs when Sentry is overloaded by honoring Sentry's
 // retry-after (429) header.  https://docs.sentry.io/clientdev/overview/
 func handleResponse(resp *http.Response) {
-	if resp.StatusCode != http.StatusOK || resp.StatusCode != http.StatusNoContent {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		log.WithFields(log.Fields{
 			"RspCode": resp.StatusCode,
 			"Headers": resp.Header,

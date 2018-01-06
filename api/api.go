@@ -6,28 +6,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/mkrysiak/cyclops-go/conf"
 	"github.com/mkrysiak/cyclops-go/hash"
 
-	"github.com/golang/gddo/httputil/header"
 	"github.com/mkrysiak/cyclops-go/models"
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
-
-// https://docs.sentry.io/clientdev/overview/#authentication
-type XSentryAuth struct {
-	// sentry_version string
-	// sentry_client  string
-	// sentry_timestamp string
-	sentry_key    string
-	sentry_secret string
-}
 
 type Api struct {
 	cfg            *conf.Config
@@ -71,7 +60,8 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !a.projects.IsValidProjectAndPublicKey(projectId, getSentryKeyAndSecret(r).sentry_key) {
+	xSentryAuth := NewXSentryAuth(r)
+	if !a.projects.IsValidProjectAndPublicKey(projectId, xSentryAuth.sentry_key) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -160,26 +150,6 @@ func (a *Api) processRequest(r *http.Request, projectId int, originUrl string, b
 	a.requestStorage.Put(projectId, m)
 }
 
-// The sentry public key can be sent in two ways, using the "X-Sentry-Auth"
-// header, or as a query argument.  The header takes precendence.
-func getSentryKeyAndSecret(r *http.Request) XSentryAuth {
-	var xSentryAuth XSentryAuth
-	xSentryAuth.sentry_key = r.URL.Query().Get("sentry_key")
-	headerValues := header.ParseList(r.Header, "X-Sentry-Auth")
-	for _, v := range headerValues {
-		if strings.Contains(v, "=") {
-			sp := strings.SplitN(v, "=", 2)
-			switch sp[0] {
-			case "sentry_key":
-				xSentryAuth.sentry_key = sp[1]
-			case "sentry_secret":
-				xSentryAuth.sentry_secret = sp[1]
-			}
-		}
-	}
-	return xSentryAuth
-}
-
 func logRequest(r *http.Request) {
 	var requestLogLine bytes.Buffer
 	requestLogLine.WriteString(r.RemoteAddr)
@@ -191,7 +161,6 @@ func logRequest(r *http.Request) {
 }
 
 func getRequestBody(r *http.Request) ([]byte, error) {
-	body := []byte{}
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return body, err
