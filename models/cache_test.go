@@ -27,7 +27,6 @@ func TestCache(t *testing.T) {
 
 	t.Run("SetAndGet", func(t *testing.T) {
 		cache.Flushdb()
-		// cache.Set("testkey", 97*time.Second)
 		cache.Incr("testkey")
 		cache.Expire("testkey", 97*time.Second)
 		v, err := cache.Get("testkey")

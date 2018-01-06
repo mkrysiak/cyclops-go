@@ -11,6 +11,7 @@ import (
 
 	"github.com/mkrysiak/cyclops-go/conf"
 	"github.com/mkrysiak/cyclops-go/hash"
+	"github.com/urfave/negroni"
 
 	"github.com/mkrysiak/cyclops-go/models"
 
@@ -29,7 +30,7 @@ type Api struct {
 }
 
 func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.RequestStorage,
-	projects *models.SentryProjects) *mux.Router {
+	projects *models.SentryProjects) *negroni.Negroni {
 	api := &Api{
 		cfg:                cfg,
 		requestStorage:     requestStorage,
@@ -43,17 +44,20 @@ func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.
 	r.HandleFunc("/healthcheck", api.healthcheckHandler).Methods("GET")
 	//TODO: Restrict access to /stats.  It should not be public.
 	r.HandleFunc("/stats", api.statsHandler).Methods("GET")
-	return r
+
+	// Middleware
+	n := negroni.New()
+	n.Use(negroni.HandlerFunc(api.LoggingMiddleware))
+	n.UseHandler(r)
+
+	return n
 }
 
 func (a *Api) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))
-	log.Info(r.RemoteAddr + " " + r.Method + " " + r.URL.Path)
 }
 
 func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
-	logRequest(r)
-
 	vars := mux.Vars(r)
 	projectId, err := strconv.Atoi(vars["projectId"])
 	if err != nil {
@@ -125,12 +129,8 @@ func (a *Api) statsHandler(w http.ResponseWriter, r *http.Request) {
 func (a *Api) validateCache(cacheKey string) int64 {
 	var count int64
 	if a.urlCacheExpiration > 0 {
-		// count, _ = a.cache.Get(cacheKey)
-		// if count == 0 {
-		// 	a.cache.Set(cacheKey, a.urlCacheExpiration)
-		// }
 		count, _ = a.cache.Incr(cacheKey)
-		if count == 0 {
+		if count == 1 {
 			a.cache.Expire(cacheKey, a.urlCacheExpiration)
 		}
 	}
@@ -150,16 +150,6 @@ func (a *Api) processRequest(r *http.Request, projectId int, originUrl string, b
 	}
 
 	a.requestStorage.Put(projectId, m)
-}
-
-func logRequest(r *http.Request) {
-	var requestLogLine bytes.Buffer
-	requestLogLine.WriteString(r.RemoteAddr)
-	requestLogLine.WriteString(" ")
-	requestLogLine.WriteString(r.Method)
-	requestLogLine.WriteString(" ")
-	requestLogLine.WriteString(r.URL.Path)
-	log.Info(requestLogLine.String())
 }
 
 func getRequestBody(r *http.Request) ([]byte, error) {
