@@ -35,7 +35,7 @@ func TestAPI(t *testing.T) {
 	redis := models.NewRedisByAddr(s.Addr())
 	cache := models.NewCache(redis.Client)
 	requestStorage := models.NewRequestStorage(redis.Client)
-	sentryProjects := models.NewSentryProjects(cfg)
+	sentryProjects := models.NewSentryProjects(cfg.GetDatabaseSchemeAndUrl())
 
 	teardown := setup(t, sentryProjects.Db)
 	defer teardown(t, sentryProjects.Db)
@@ -79,7 +79,8 @@ func TestAPI(t *testing.T) {
 
 	t.Run("MaxCacheUses Limit", func(t *testing.T) {
 		redis.Client.Del("405a671c66aefea124cc08b76ea6d30bb")
-		for i := 0; i < cfg.MaxCacheUses; i++ {
+		// cfg.MaxCacheUses should equal 5
+		for i := 0; i < 5; i++ {
 			e.POST("/api/4/store/").
 				WithQuery("sentry_key", "42aa6019f602d77313ec553625ecb01a").WithJSON(exception).
 				Expect().Status(http.StatusNoContent).Header("X-CYCLOPS-STATUS").Equal("PROCESSED")

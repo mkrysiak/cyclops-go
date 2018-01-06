@@ -33,10 +33,10 @@ func main() {
 		"MaxCacheUses":       cfg.MaxCacheUses,
 	}).Info("Loaded Config:")
 
-	redis := models.NewRedisClient(cfg)
+	redis := models.NewRedisClient(cfg.RedisURL)
 	cache := models.NewCache(redis.Client)
 	requestStorage := models.NewRequestStorage(redis.Client)
-	sentryProjects := models.NewSentryProjects(cfg)
+	sentryProjects := models.NewSentryProjects(cfg.GetDatabaseSchemeAndUrl())
 
 	tasks.StartBackgroundTaskRunners(sentryProjects, requestStorage)
 

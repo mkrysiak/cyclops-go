@@ -2,7 +2,6 @@ package models
 
 import (
 	"github.com/go-redis/redis"
-	"github.com/mkrysiak/cyclops-go/conf"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -10,8 +9,8 @@ type Redis struct {
 	Client *redis.Client
 }
 
-func NewRedisClient(cfg *conf.Config) *Redis {
-	opt, err := redis.ParseURL(cfg.RedisURL)
+func NewRedisClient(redisUrl string) *Redis {
+	opt, err := redis.ParseURL(redisUrl)
 	if err != nil {
 		log.Error(err)
 	}

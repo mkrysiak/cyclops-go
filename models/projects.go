@@ -6,7 +6,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/mkrysiak/cyclops-go/conf"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,16 +17,12 @@ type SentryProject struct {
 
 type SentryProjects struct {
 	SentryProjects []SentryProject
-	Cfg            *conf.Config
 	Db             *sqlx.DB
 }
 
 var projectsById sync.Map
 
-func NewSentryProjects(cfg *conf.Config) *SentryProjects {
-
-	// scheme, url, _ := getDbUrl(cfg, env)
-	scheme, url, _ := cfg.GetDatabaseSchemeAndUrl()
+func NewSentryProjects(scheme string, url string) *SentryProjects {
 
 	db, err := sqlx.Connect(scheme, url)
 	if err != nil {
@@ -42,7 +37,7 @@ func NewSentryProjects(cfg *conf.Config) *SentryProjects {
 		db.SetMaxOpenConns(1)
 	}
 
-	return &SentryProjects{Cfg: cfg, Db: db}
+	return &SentryProjects{Db: db}
 }
 
 func (p *SentryProjects) IsValidProjectAndPublicKey(projectId int, publicKey string) bool {

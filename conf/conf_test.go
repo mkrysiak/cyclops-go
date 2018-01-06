@@ -17,12 +17,12 @@ func TestValidConf(t *testing.T) {
 		t.Log(err)
 	}
 	assert.Nil(t, err)
-	assert.Equal(t, conf.Port, "8000")
-	assert.Equal(t, conf.DatabaseURL, "teststring")
-	assert.Equal(t, conf.RedisURL, "teststring")
+	assert.Equal(t, "8000", conf.Port)
+	assert.Equal(t, "teststring", conf.DatabaseURL)
+	assert.Equal(t, "teststring", conf.RedisURL)
 	// Defaults
-	assert.Equal(t, conf.MaxCacheUses, 10)
-	assert.Equal(t, conf.UrlCacheExpiration, 60)
+	assert.Equal(t, int64(10), conf.MaxCacheUses)
+	assert.Equal(t, 60, conf.UrlCacheExpiration)
 }
 
 func TestInvalidConf(t *testing.T) {

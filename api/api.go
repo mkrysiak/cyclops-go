@@ -19,22 +19,24 @@ import (
 )
 
 type Api struct {
-	cfg            *conf.Config
-	cache          *models.Cache
-	requestStorage *models.RequestStorage
-	projects       *models.SentryProjects
-	ignoredItems   uint64
-	processedItems uint64
+	cfg                *conf.Config
+	cache              *models.Cache
+	requestStorage     *models.RequestStorage
+	projects           *models.SentryProjects
+	urlCacheExpiration time.Duration
+	ignoredItems       uint64
+	processedItems     uint64
 }
 
 func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.RequestStorage,
 	projects *models.SentryProjects) *mux.Router {
 	api := &Api{
-		cfg:            cfg,
-		requestStorage: requestStorage,
-		projects:       projects,
-		cache:          cache,
-		ignoredItems:   0,
+		cfg:                cfg,
+		requestStorage:     requestStorage,
+		projects:           projects,
+		cache:              cache,
+		urlCacheExpiration: time.Duration(cfg.UrlCacheExpiration) * time.Second,
+		ignoredItems:       0,
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/api/{projectId:[0-9]+}/store/", api.apiHandler).Methods("POST")
@@ -94,7 +96,7 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: It's bad practice to return headers that can identify the product that's in use if
 	// this proxy is externally exposed.
 	count := a.validateCache(cacheKey.String())
-	if count > int64(a.cfg.MaxCacheUses) {
+	if count > a.cfg.MaxCacheUses {
 		w.Header().Set("X-CYCLOPS-CACHE-COUNT", strconv.FormatInt(count, 10))
 		w.Header().Set("X-CYCLOPS-STATUS", "IGNORED")
 		atomic.AddUint64(&a.ignoredItems, 1)
@@ -125,10 +127,10 @@ func (a *Api) statsHandler(w http.ResponseWriter, r *http.Request) {
 
 func (a *Api) validateCache(url string) int64 {
 	var count int64
-	if a.cfg.UrlCacheExpiration > 0 {
+	if a.urlCacheExpiration > 0 {
 		count, _ = a.cache.Get(url)
 		if count == 0 {
-			a.cache.Set(url, time.Duration(a.cfg.UrlCacheExpiration)*time.Second)
+			a.cache.Set(url, a.urlCacheExpiration)
 		}
 		count, _ = a.cache.Incr(url)
 	}

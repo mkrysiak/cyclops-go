@@ -14,7 +14,7 @@ type Config struct {
 	DatabaseURL        string `required:"true" env:"DATABASE_URL"`
 	RedisURL           string `required:"true" env:"REDIS_URL"`
 	SentryURL          string `required:"true" env:"SENTRY_URL"`
-	MaxCacheUses       int    `default:"10" env:"MAX_CACHE_USES"`
+	MaxCacheUses       int64  `default:"10" env:"MAX_CACHE_USES"`
 	UrlCacheExpiration int    `default:"60" env:"URL_CACHE_EXPIRATION"`
 }
 
@@ -29,17 +29,17 @@ func New() (*Config, error) {
 	return config, err
 }
 
-func (c *Config) GetDatabaseSchemeAndUrl() (string, string, error) {
+func (c *Config) GetDatabaseSchemeAndUrl() (string, string) {
 
 	if c.Environment == "test" {
-		return "sqlite3", ":memory:", nil
+		return "sqlite3", ":memory:"
 	}
 
 	u, err := url.Parse(c.DatabaseURL)
 	if err != nil {
-		log.Error(err)
-		return "", "", err
+		log.Fatal(err)
+		return "", ""
 	}
-	return u.Scheme, c.DatabaseURL, nil
+	return u.Scheme, c.DatabaseURL
 
 }
