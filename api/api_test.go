@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,7 +12,6 @@ import (
 
 	"github.com/gavv/httpexpect"
 	"github.com/mkrysiak/cyclops-go/conf"
-	"github.com/mkrysiak/cyclops-go/hash"
 	"github.com/mkrysiak/cyclops-go/models"
 )
 
@@ -105,10 +103,7 @@ func TestAPI(t *testing.T) {
 		e.POST("/api/4/store/").
 			WithQuery("sentry_key", "42aa6019f602d77313ec553625ecb01a").WithJSON(exception).
 			Expect().Status(http.StatusNoContent)
-		body, _ := json.Marshal(exception)
-		exceptionHash, _ := hash.HashForGrouping(body)
-		cacheKey := "4" + exceptionHash
-		cacheValue, _ := cache.Get(cacheKey)
+		cacheValue, _ := cache.Get("405a671c66aefea124cc08b76ea6d30bb")
 		assert.Equal(t, int64(1), cacheValue)
 	})
 
