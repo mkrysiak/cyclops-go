@@ -23,8 +23,7 @@ func TestAPI(t *testing.T) {
 	os.Setenv("SENTRY_URL", "http://localhost:2222")
 	os.Setenv("MAX_CACHE_USES", "5")
 	os.Setenv("URL_CACHE_EXPIRATION", "60")
-	os.Setenv("CORS_ORIGIN_SUFFIX", "localhost")
-	os.Setenv("CORS_EXTERNAL_DNS", "localhost:23343")
+	os.Setenv("CYCLOPS_ALLOW_ORIGIN", "localhost:23343")
 
 	cfg, err := conf.New()
 	if err != nil {
@@ -110,19 +109,24 @@ func TestAPI(t *testing.T) {
 	})
 
 	t.Run("CORS Headers Exist", func(t *testing.T) {
-		redis.Client.Del("405a671c66aefea124cc08b76ea6d30bb")
 		e.POST("/api/4/store/").
 			WithQuery("sentry_key", "42aa6019f602d77313ec553625ecb01a").WithJSON(exception).
-			WithHeader("Origin", "http://localhost").
-			Expect().Status(http.StatusNoContent).Header("Access-Control-Allow-Origin").Equal("http://localhost")
+			WithHeader("Origin", "http://test.localhost:23343").
+			Expect().Status(http.StatusNoContent).Header("Access-Control-Allow-Origin").Equal("http://test.localhost:23343")
 	})
 
 	t.Run("CORS Headers Missing", func(t *testing.T) {
-		redis.Client.Del("405a671c66aefea124cc08b76ea6d30bb")
 		e.POST("/api/4/store/").
 			WithQuery("sentry_key", "42aa6019f602d77313ec553625ecb01a").WithJSON(exception).
-			WithHeader("Origin", "localhost:23343").
+			WithHeader("Origin", "http://badorigin").
 			Expect().Status(http.StatusNoContent).Header("Access-Control-Allow-Origin").Equal("")
+	})
+
+	t.Run("CORS OPTIONS Request", func(t *testing.T) {
+		e.OPTIONS("/api/4/store/").
+			WithQuery("sentry_key", "42aa6019f602d77313ec553625ecb01a").WithJSON(exception).
+			WithHeader("Origin", "http://localhost:23343").
+			Expect().Status(http.StatusNoContent).Header("Access-Control-Allow-Origin").Equal("http://localhost:23343")
 	})
 
 }

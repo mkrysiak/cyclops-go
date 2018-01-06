@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -40,14 +42,14 @@ func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.
 		ignoredItems:       0,
 	}
 	r := mux.NewRouter()
-	r.HandleFunc("/api/{projectId:[0-9]+}/store/", api.apiHandler).Methods("POST")
+	r.HandleFunc("/api/{projectId:[0-9]+}/store/", api.apiHandler).Methods("POST", "OPTIONS")
 	r.HandleFunc("/healthcheck", api.healthcheckHandler).Methods("GET")
 	//TODO: Restrict access to /stats.  Ideally, it should not be public.
 	r.HandleFunc("/stats", api.statsHandler).Methods("GET")
 
 	// Middleware
 	n := negroni.New()
-	n.Use(negroni.HandlerFunc(api.OptionsHandler))
+	// n.Use(negroni.HandlerFunc(api.OptionsHandler))
 	n.Use(negroni.HandlerFunc(api.LoggingMiddleware))
 	n.UseHandler(r)
 
@@ -59,6 +61,13 @@ func (a *Api) healthcheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
+
+	a.addCorsHeaders(w, r)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
 	vars := mux.Vars(r)
 	projectId, err := strconv.Atoi(vars["projectId"])
 	if err != nil {
@@ -148,6 +157,36 @@ func (a *Api) processRequest(r *http.Request, projectId int, originUrl string, b
 	}
 
 	a.requestStorage.Put(projectId, m)
+}
+
+func (a *Api) addCorsHeaders(rw http.ResponseWriter, r *http.Request) {
+	origin, validOrigin := a.isValidOrigin(r.Header.Get("Origin"))
+	if validOrigin {
+		rw.Header().Set("Access-Control-Allow-Origin", origin)
+		rw.Header().Set("Access-Control-Allow-Credentials", "true")
+		rw.Header().Set("Access-Control-Allow-Headers", "X-Sentry-Auth, X-Requested-With, Origin, Accept, Content-Type, Authentication")
+		rw.Header().Set("Access-Control-Expose-Headers",
+			"Cache-Control,Content-Encoding,Content-Length,Content-Type,Date,ETag,Expires,Pragma,Server,Vary,X-CYCLOPS-CACHE-COUNT,X-CYCLOPS-STATUS")
+		rw.Header().Set("Access-Control-Max-Age", "86400")
+		rw.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	}
+}
+
+func (a *Api) isValidOrigin(origin string) (string, bool) {
+	if a.cfg.CyclopsAllowOrigin == "" {
+		return "", false
+	}
+	if a.cfg.CyclopsAllowOrigin == "*" {
+		return "*", true
+	}
+	u, err := url.Parse(origin)
+	if err != nil {
+		log.Error(err)
+	}
+	if strings.HasSuffix(u.Host, a.cfg.CyclopsAllowOrigin) {
+		return origin, true
+	}
+	return "", false
 }
 
 func getRequestBody(r *http.Request) ([]byte, error) {
