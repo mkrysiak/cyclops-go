@@ -95,8 +95,6 @@ func TestAPI(t *testing.T) {
 		// the counters are accurate
 		e.GET("/stats").Expect().Status(http.StatusOK).Body().
 			Match("Processed Items: [0-9]+\nIgnored Items: [0-9]+")
-		// str := "Processed Items: " + strconv.Itoa(cfg.MaxCacheUses+1) + "\nIgnored Items: 1"
-		//e.GET("/stats").Expect().Status(http.StatusOK).Body().Contains(str)
 	})
 
 	t.Run("Increment Cache", func(t *testing.T) {

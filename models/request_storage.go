@@ -41,7 +41,6 @@ func (s *RequestStorage) Put(projectId int, message *Message) {
 	if err != nil {
 		log.Error(err)
 	}
-	//TODO: Msgpack message
 
 	b, err := msgpack.Marshal(message)
 	if err != nil {

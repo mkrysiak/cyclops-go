@@ -49,7 +49,6 @@ func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.
 
 	// Middleware
 	n := negroni.New()
-	// n.Use(negroni.HandlerFunc(api.OptionsHandler))
 	n.Use(negroni.HandlerFunc(api.LoggingMiddleware))
 	n.UseHandler(r)
 
