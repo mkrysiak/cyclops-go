@@ -115,14 +115,11 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) statsHandler(w http.ResponseWriter, r *http.Request) {
-
-	var stats bytes.Buffer
-	stats.WriteString("Processed Items: ")
-	stats.WriteString(strconv.FormatUint(a.processedItems, 10))
-	stats.WriteString("\n")
-	stats.WriteString("Ignored Items: ")
-	stats.WriteString(strconv.FormatUint(a.ignoredItems, 10))
-	w.Write(stats.Bytes())
+	w.Write([]byte("Processed Items: "))
+	w.Write([]byte(strconv.FormatUint(a.processedItems, 10)))
+	w.Write([]byte("\n"))
+	w.Write([]byte("Ignored Items: "))
+	w.Write([]byte(strconv.FormatUint(a.ignoredItems, 10)))
 }
 
 func (a *Api) validateCache(url string) int64 {
