@@ -26,15 +26,18 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("SetAndGet", func(t *testing.T) {
-		cache.Set("testkey", 97*time.Second)
+		cache.Flushdb()
+		// cache.Set("testkey", 97*time.Second)
+		cache.Incr("testkey")
+		cache.Expire("testkey", 97*time.Second)
 		v, err := cache.Get("testkey")
 		if err != nil {
 			t.Log(err)
 		}
 		ttl := cache.Ttl("testkey").Seconds()
-		assert.Equal(t, int64(0), v, "Redis key should equal \"0\"")
+		assert.Equal(t, int64(1), v, "Redis key should equal \"1\"")
 		assert.Condition(t, func() bool {
-			return ttl > 80
+			return ttl > 94 && ttl <= 97
 		}, "TTL should only be slightly less than 97")
 	})
 

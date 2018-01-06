@@ -122,14 +122,17 @@ func (a *Api) statsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.FormatUint(a.ignoredItems, 10)))
 }
 
-func (a *Api) validateCache(url string) int64 {
+func (a *Api) validateCache(cacheKey string) int64 {
 	var count int64
 	if a.urlCacheExpiration > 0 {
-		count, _ = a.cache.Get(url)
+		// count, _ = a.cache.Get(cacheKey)
+		// if count == 0 {
+		// 	a.cache.Set(cacheKey, a.urlCacheExpiration)
+		// }
+		count, _ = a.cache.Incr(cacheKey)
 		if count == 0 {
-			a.cache.Set(url, a.urlCacheExpiration)
+			a.cache.Expire(cacheKey, a.urlCacheExpiration)
 		}
-		count, _ = a.cache.Incr(url)
 	}
 	return count
 }
