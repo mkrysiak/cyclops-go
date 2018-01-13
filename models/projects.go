@@ -50,7 +50,7 @@ func (p *SentryProjects) IsValidProjectAndPublicKey(projectId int, publicKey str
 }
 
 func (p *SentryProjects) UpdateProjects() {
-	log.Info("Updating projects map")
+	log.Debug("Updating projects map from the Database")
 	projects := []SentryProject{}
 	err := p.Db.Select(&projects, "SELECT project_id, public_key, secret_key FROM sentry_projectkey")
 	if err != nil {

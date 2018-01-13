@@ -68,7 +68,7 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := mux.Vars(r)
-	projectId, err := strconv.Atoi(vars["projectId"])
+	projectIdInt, err := strconv.Atoi(vars["projectId"])
 	if err != nil {
 		log.Error(err)
 		w.WriteHeader(http.StatusNotFound)
@@ -76,7 +76,7 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	xSentryAuth := NewXSentryAuth(r)
-	if !a.projects.IsValidProjectAndPublicKey(projectId, xSentryAuth.sentry_key) {
+	if !a.projects.IsValidProjectAndPublicKey(projectIdInt, xSentryAuth.sentry_key) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
@@ -118,7 +118,7 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-CYCLOPS-STATUS", "PROCESSED")
 	atomic.AddUint64(&a.processedItems, 1)
 
-	a.processRequest(r, projectId, originUrl.String(), bodyBytes)
+	a.processRequest(r, vars["projectId"], originUrl.String(), bodyBytes)
 
 	w.WriteHeader(http.StatusNoContent)
 
@@ -143,7 +143,7 @@ func (a *Api) validateCache(cacheKey string) int64 {
 	return count
 }
 
-func (a *Api) processRequest(r *http.Request, projectId int, originUrl string, body []byte) {
+func (a *Api) processRequest(r *http.Request, projectId string, originUrl string, body []byte) {
 
 	// Headers is a map[string][]string
 
@@ -155,7 +155,7 @@ func (a *Api) processRequest(r *http.Request, projectId int, originUrl string, b
 		RequestBody:   body,
 	}
 
-	a.requestStorage.Put(projectId, m)
+	a.requestStorage.Put(m)
 }
 
 func (a *Api) addCorsHeaders(rw http.ResponseWriter, r *http.Request) {
