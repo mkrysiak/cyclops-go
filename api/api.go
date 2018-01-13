@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/mkrysiak/cyclops-go/conf"
@@ -27,8 +26,7 @@ type Api struct {
 	requestStorage     *models.RequestStorage
 	projects           *models.SentryProjects
 	urlCacheExpiration time.Duration
-	ignoredItems       uint64
-	processedItems     uint64
+	counters           *models.Counter
 }
 
 func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.RequestStorage,
@@ -39,7 +37,7 @@ func NewApiRouter(cfg *conf.Config, cache *models.Cache, requestStorage *models.
 		projects:           projects,
 		cache:              cache,
 		urlCacheExpiration: time.Duration(cfg.UrlCacheExpiration) * time.Second,
-		ignoredItems:       0,
+		counters:           models.NewCounter(),
 	}
 	r := mux.NewRouter()
 	r.HandleFunc("/api/{projectId:[0-9]+}/store/", api.apiHandler).Methods("POST", "OPTIONS")
@@ -105,18 +103,20 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 	originUrl.WriteString(r.RequestURI)
 	log.Debugf("Origin URL: %s", originUrl.String())
 
+	projectName := a.projects.GetProjectName(projectIdInt)
+
 	count := a.validateCache(cacheKey.String())
 	if count > a.cfg.MaxCacheUses {
 		w.Header().Set("X-CYCLOPS-CACHE-COUNT", strconv.FormatInt(count, 10))
 		w.Header().Set("X-CYCLOPS-STATUS", "IGNORED")
-		atomic.AddUint64(&a.ignoredItems, 1)
+		a.counters.Incr(projectName + ".ignored")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
 	w.Header().Set("X-CYCLOPS-CACHE-COUNT", strconv.FormatInt(count, 10))
 	w.Header().Set("X-CYCLOPS-STATUS", "PROCESSED")
-	atomic.AddUint64(&a.processedItems, 1)
+	a.counters.Incr(projectName + ".processed")
 
 	a.processRequest(r, vars["projectId"], originUrl.String(), bodyBytes)
 
@@ -125,11 +125,7 @@ func (a *Api) apiHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) statsHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Processed Items: "))
-	w.Write([]byte(strconv.FormatUint(a.processedItems, 10)))
-	w.Write([]byte("\n"))
-	w.Write([]byte("Ignored Items: "))
-	w.Write([]byte(strconv.FormatUint(a.ignoredItems, 10)))
+	w.Write([]byte(a.counters.GetCountersString()))
 }
 
 func (a *Api) validateCache(cacheKey string) int64 {

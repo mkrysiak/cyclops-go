@@ -163,10 +163,30 @@ func Up(t *testing.T, db *sqlx.DB) error {
 		return err
 	}
 
+	createTable = `CREATE TABLE sentry_project (
+		id INTEGER PRIMARY_KEY,
+		name TEXT NOT NULL
+	);`
+
+	db.MustExec(createTable)
+
+	query = `INSERT INTO sentry_project (id, name) VALUES
+	(1, 'project1'),
+	(2, 'project2'),
+	(3, 'project3'),
+	(4, 'project4'),
+	(5, 'project5');`
+
+	_, err = db.Exec(query)
+	if err != nil {
+		t.Log(err)
+		return err
+	}
+
 	return nil
 }
 
 func Down(t *testing.T, db *sqlx.DB) error {
-	_, err := db.Exec("DROP TABLE sentry_projectkey")
+	_, err := db.Exec("DROP TABLE sentry_projectkey, sentry_project")
 	return err
 }
