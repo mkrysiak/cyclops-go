@@ -138,12 +138,12 @@ func (s *RequestStorage) loadScript() string {
 	if retryAfter ~= false then
 		return ""
 	end
-	local existsProjectQueue=redis.call('exists', KEYS[3] .. randProjId)
-	if existsProjectQueue == 0 then
+	local projectQueue=redis.call('rpop', KEYS[3] .. randProjId)
+	if projectQueue == false then
+		redis.call('srem', KEYS[1], randProjId)
 		return ""
 	end
-	local projQueue=redis.call('rpop', KEYS[3] .. randProjId)
-	return projQueue`
+	return projectQueue`
 	scriptSha, err = s.Client.ScriptLoad(script).Result()
 	if err != nil {
 		log.WithFields(log.Fields{
